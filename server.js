@@ -1,5 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
+const { chromium } = require("playwright");
 
 const app = express();
 
@@ -25,10 +25,8 @@ const DEVICES = {
   }
 };
 
-// Serve frontend
 app.use(express.static("public"));
 
-// Preview endpoint
 app.get("/preview", async (req, res) => {
   const { url, device } = req.query;
 
@@ -44,33 +42,19 @@ app.get("/preview", async (req, res) => {
   let browser;
 
   try {
-    // Try using Render's built-in Chromium
-    try {
-      browser = await puppeteer.launch({
-        executablePath: "/usr/bin/chromium",
-        headless: "new",
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu"
-        ]
-      });
-    } catch (err) {
-      console.log("Falling back to default Puppeteer launch...");
-      browser = await puppeteer.launch({
-        headless: "new",
-        args: ["--no-sandbox"]
-      });
-    }
-
-    const page = await browser.newPage();
-
-    await page.setUserAgent(config.userAgent);
-    await page.setViewport({
-      width: config.width,
-      height: config.height
+    browser = await chromium.launch({
+      args: ["--no-sandbox"]
     });
+
+    const context = await browser.newContext({
+      viewport: {
+        width: config.width,
+        height: config.height
+      },
+      userAgent: config.userAgent
+    });
+
+    const page = await context.newPage();
 
     await page.goto(
       url.startsWith("http") ? url : `https://${url}`,
@@ -91,12 +75,11 @@ app.get("/preview", async (req, res) => {
     res.send(screenshot);
 
   } catch (err) {
-    console.error("PUPPETEER ERROR:", err);
+    console.error("PLAYWRIGHT ERROR:", err);
     if (browser) await browser.close();
     res.status(500).send("Error loading page");
   }
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));
