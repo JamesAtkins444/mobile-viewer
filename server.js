@@ -20,15 +20,26 @@ app.get("/preview", async (req, res) => {
     return res.status(400).send("Missing parameters");
   }
 
-  const config = DEVICES[device];
-  if (!config) {
-    return res.status(400).send("Invalid device");
+const DEVICES = {
+  iphone14: {
+    name: "iPhone 14",
+    width: 390,
+    height: 844,
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)"
+  },
+  pixel7: {
+    name: "Pixel 7",
+    width: 412,
+    height: 915,
+    userAgent: "Mozilla/5.0 (Linux; Android 13; Pixel 7)"
+  },
+  ipad: {
+    name: "iPad",
+    width: 768,
+    height: 1024,
+    userAgent: "Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X)"
   }
-
-  try {
-    const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+};
 
     const page = await browser.newPage();
 
