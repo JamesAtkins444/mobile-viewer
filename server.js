@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 
 const app = express();
 
-// ✅ DEFINE DEVICES ONCE (at the top)
+// Device configs
 const DEVICES = {
   iphone14: {
     name: "iPhone 14",
@@ -25,9 +25,10 @@ const DEVICES = {
   }
 };
 
+// Serve frontend
 app.use(express.static("public"));
 
-// ✅ ROUTE
+// Preview endpoint
 app.get("/preview", async (req, res) => {
   const { url, device } = req.query;
 
@@ -40,16 +41,28 @@ app.get("/preview", async (req, res) => {
     return res.status(400).send("Invalid device");
   }
 
+  let browser;
+
   try {
-const browser = await puppeteer.launch({
-  headless: "new",
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu"
-  ]
-});
+    // Try using Render's built-in Chromium
+    try {
+      browser = await puppeteer.launch({
+        executablePath: "/usr/bin/chromium",
+        headless: "new",
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu"
+        ]
+      });
+    } catch (err) {
+      console.log("Falling back to default Puppeteer launch...");
+      browser = await puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox"]
+      });
+    }
 
     const page = await browser.newPage();
 
@@ -59,25 +72,31 @@ const browser = await puppeteer.launch({
       height: config.height
     });
 
-await page.goto(
-  url.startsWith("http") ? url : `https://${url}`,
-  {
-    waitUntil: "domcontentloaded",
-    timeout: 60000
-  }
-);
+    await page.goto(
+      url.startsWith("http") ? url : `https://${url}`,
+      {
+        waitUntil: "domcontentloaded",
+        timeout: 60000
+      }
+    );
 
-    const screenshot = await page.screenshot();
+    const screenshot = await page.screenshot({
+      type: "jpeg",
+      quality: 60
+    });
 
     await browser.close();
 
-    res.set("Content-Type", "image/png");
+    res.set("Content-Type", "image/jpeg");
     res.send(screenshot);
+
   } catch (err) {
-    console.error(err);
+    console.error("PUPPETEER ERROR:", err);
+    if (browser) await browser.close();
     res.status(500).send("Error loading page");
   }
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));
