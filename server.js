@@ -41,9 +41,15 @@ app.get("/preview", async (req, res) => {
   }
 
   try {
-    const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+const browser = await puppeteer.launch({
+  headless: "new",
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu"
+  ]
+});
 
     const page = await browser.newPage();
 
@@ -53,13 +59,13 @@ app.get("/preview", async (req, res) => {
       height: config.height
     });
 
-    await page.goto(
-      url.startsWith("http") ? url : `https://${url}`,
-      {
-        waitUntil: "networkidle2",
-        timeout: 30000
-      }
-    );
+await page.goto(
+  url.startsWith("http") ? url : `https://${url}`,
+  {
+    waitUntil: "domcontentloaded",
+    timeout: 60000
+  }
+);
 
     const screenshot = await page.screenshot();
 
