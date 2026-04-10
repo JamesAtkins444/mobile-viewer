@@ -1,1 +1,75 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile Viewer Clone</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #0f172a;
+      color: white;
+    }
+
+    input {
+      padding: 10px;
+      width: 60%;
+      margin: 20px;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .device {
+      background: black;
+      padding: 10px;
+      border-radius: 30px;
+      width: 320px;
+    }
+
+    .device img {
+      width: 100%;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Mobile Viewer</h1>
+<input id="url" placeholder="Enter URL..." />
+<button onclick="loadPreviews()">Preview</button>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const devices = ["iphone14", "pixel7", "ipad"];
+
+function loadPreviews() {
+  const url = document.getElementById("url").value;
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  devices.forEach(device => {
+    const div = document.createElement("div");
+    div.className = "device";
+
+    const img = document.createElement("img");
+    img.src = `/preview?url=${encodeURIComponent(url)}&device=${device}`;
+
+    const title = document.createElement("h3");
+    title.innerText = device;
+
+    div.appendChild(title);
+    div.appendChild(img);
+    grid.appendChild(div);
+  });
+}
+</script>
+
+</body>
+</html>
